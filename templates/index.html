@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CCTV Monitoring</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body class="p-6 bg-gray-100">
+  <h1 class="text-4xl text-center mb-10 font-bold text-gray-800">CCTV Monitoring System</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Kamera View -->
+    <div class="relative rounded-xl border-2 border-cyan-400 p-3 bg-white shadow-lg animate-fade-in">
+      <h2 class="text-xl font-semibold mb-2 text-gray-700">Camera 1</h2>
+      <img id="camera-stream" src="/video_feed" class="w-full rounded-lg" onerror="handleCameraError()" />
+      <div id="camera-error" class="text-red-500 text-center mt-2 hidden">⚠ Kamera tidak tersedia</div>
+    </div>
+
+    <!-- Notifikasi -->
+    <div class="rounded-xl border-2 border-cyan-400 p-3 bg-white shadow-lg animate-fade-in relative">
+      <h2 class="text-xl font-semibold mb-2 text-gray-700">Notifikasi</h2>
+      <div id="notif-count" class="absolute top-2 right-4 text-xs text-cyan-500"></div>
+      <div id="notifLog" class="bg-gray-800 text-white h-96 overflow-y-auto rounded p-2 space-y-2">
+        <!-- Notifikasi realtime akan muncul di sini -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Popup (floating) -->
+  <div id="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+  <!-- Statistik dan History Button -->
+  <div class="w-full bg-gray-900 text-white p-6 mt-10 rounded-2xl border-t-4 border-cyan-400 animate-fade-in shadow-xl">
+    <div class="flex flex-col md:flex-row justify-around items-center gap-6 text-center text-lg font-semibold">
+      <div class="space-y-1">
+        <div class="text-yellow-400 text-3xl">📨</div>
+        <div>Respon Telegram</div>
+        <div id="stat-respon" class="text-3xl font-bold text-yellow-300">0</div>
+      </div>
+      <div class="space-y-1">
+        <div class="text-red-400 text-3xl">🚨</div>
+        <div>Pelanggaran</div>
+        <div id="stat-pelanggaran" class="text-3xl font-bold text-red-300">0</div>
+      </div>
+      <div class="mt-4 md:mt-0">
+        <a href="/history" class="inline-block bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg transition duration-200 shadow">
+          📄 Lihat Riwayat Pelanggaran
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

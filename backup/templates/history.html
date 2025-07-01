@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Riwayat Pelanggaran</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100 p-6">
+  <h1 class="text-3xl font-bold mb-6 text-center">📄 Riwayat Pelanggaran</h1>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full bg-white rounded-lg shadow-md">
+      <thead class="bg-cyan-600 text-white">
+        <tr>
+          <th class="px-4 py-2">Tanggal</th>
+          <th class="px-4 py-2">Hari</th>
+          <th class="px-4 py-2">Waktu</th>
+          <th class="px-4 py-2">ID Kendaraan</th>
+          <th class="px-4 py-2">Kelas</th>
+          <th class="px-4 py-2">Akurasi</th>
+          <th class="px-4 py-2">Gambar</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-800">
+        {% for row in data %}
+        <tr class="border-t">
+          <td class="px-4 py-2">{{ row[0] }}</td>
+          <td class="px-4 py-2">{{ row[1] }}</td>
+          <td class="px-4 py-2">{{ row[2] }}</td>
+          <td class="px-4 py-2">{{ row[3] }}</td>
+          <td class="px-4 py-2">{{ row[4] }}</td>
+          <td class="px-4 py-2">{{ row[5] }}%</td>
+          <td class="px-4 py-2">
+            {% set file_path = 'pelanggaran/' + row[6] %}
+            {% if row[6] and (file_path|length > 0) %}
+              <a href="{{ url_for('static', filename=file_path) }}" target="_blank" class="text-blue-500 hover:underline">Lihat</a>
+            {% else %}
+              <span class="text-gray-400 italic">Gambar tidak tersedia</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-6 text-center">
+    <a href="/" class="text-cyan-600 hover:underline">← Kembali ke Dashboard</a>
+  </div>
+</body>
+</html>
