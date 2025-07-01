@@ -16,7 +16,7 @@ from openpyxl import Workbook, load_workbook
 
 os.makedirs('static/pelanggaran', exist_ok=True)
 
- 
+
 app = Flask(__name__, static_folder='static')
 socketio = SocketIO(app, cors_allowed_origins="*")
 
@@ -430,5 +430,4 @@ def handle_play_mic():
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000)
-  
+    socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
