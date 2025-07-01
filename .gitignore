@@ -1,0 +1,10 @@
+myenv/
+__pycache__/
+*.pyc
+*.pt
+*.mp4
+*.avi
+*.zip
+*.tar
+*.log
+.env
