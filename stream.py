@@ -179,7 +179,7 @@ def generate_frames():
     while True:
         now = datetime.now()
         current_hour = now.hour
-        if current_hour < 7 or current_hour >= 20:
+        if current_hour < 7 or current_hour >= 17:
             frame = np.zeros((480, 640, 3), dtype=np.uint8)
             msg = "CCTV tidak aktif di luar jam 07:00 - 17:00"
             cv2.putText(frame, msg, (50, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
@@ -430,4 +430,4 @@ def handle_play_mic():
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    socketio.run(app, host='0.0.0.0', port=5000)
