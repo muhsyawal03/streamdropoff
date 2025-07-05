@@ -204,7 +204,18 @@ def generate_frames():
                     vehicle_id = assign_vehicle_id(centroid, cls)
                     detected_vehicles.add(vehicle_id)
                     
-                    box_color = (0, 255, 0)  # Hijau default
+                    # Warna default hijau
+                    box_color = (0, 255, 0)  
+
+                    if is_inside_parking(x1, y1, x2, y2):
+                        tracked = vehicle_tracker[vehicle_id]
+                        parked_time = time.time() - tracked["time_entered"]
+
+                        if parked_time > THRESHOLD_TIME:
+                            # Ganti warna jadi merah jika sudah melanggar
+                            box_color = (0, 0, 255)
+
+                    # Gambar bounding box sesuai warna yang ditentukan
                     cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
                     cv2.putText(frame, f"ID {vehicle_id}", (x1, y1 - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
@@ -212,78 +223,51 @@ def generate_frames():
                     if is_inside_parking(x1, y1, x2, y2):
                         tracked = vehicle_tracker[vehicle_id]
                         parked_time = time.time() - tracked["time_entered"]
-                       
-                        if parked_time > THRESHOLD_TIME:
-                            box_color = (0, 0, 255)  # Merah jika melanggar
+
+                        if parked_time > THRESHOLD_TIME and not tracked["notified"]:
+                            box_color = (0, 0, 255)
                             cv2.rectangle(frame, (x1, y1), (x2, y2), box_color, 2)
 
-                            # Jika belum ada yang dilaporkan, lakukan proses pelanggaran kolektif
-                            if not any([v.get("notified") for v in vehicle_tracker.values()]):
-                                msg = f"🚨 Pelanggaran: Kendaraan ID {vehicle_id} parkir lebih dari {THRESHOLD_TIME} detik!"
-                                socketio.emit('notification', {'message': msg, 'alert': True})
-                                send_telegram(msg, "semua")
+                            msg = f"\ud83d\udea8 Pelanggaran: Kendaraan ID {vehicle_id} parkir lebih dari {THRESHOLD_TIME} detik!"
+                            socketio.emit('notification', {'message': msg, 'alert': True})
+                            send_telegram(msg, vehicle_id)
 
-                                for vid in vehicle_tracker:
-                                    threading.Thread(target=handle_countdown, args=(vid,)).start()
-                                    vehicle_tracker[vid]["notified"] = True
+                            threading.Thread(target=handle_countdown, args=(vehicle_id,)).start()
+                            tracked["notified"] = True
 
-                                # === Info Umum Pelanggaran ===
-                                now = datetime.now()
-                                tanggal = now.strftime('%d %B %Y')  # ex: 30 Juni 2025
-                                waktu = now.strftime('%H:%M:%S')
-                                hari = now.strftime('%A')            # ex: Sunday
-                                pelanggaran_time = now.strftime('%Y%m%d_%H%M%S')
-                                filename = f"pelanggaran_{pelanggaran_time}.jpg"
-                                filepath = f"static/pelanggaran/{filename}"
-                                os.makedirs("static/pelanggaran", exist_ok=True)
+                            # logging (if needed)
+                            now = datetime.now()
+                            tanggal = now.strftime('%d %B %Y')
+                            waktu = now.strftime('%H:%M:%S')
+                            hari = now.strftime('%A')
+                            pelanggaran_time = now.strftime('%Y%m%d_%H%M%S')
+                            filename = f"pelanggaran_{pelanggaran_time}.jpg"
+                            filepath = f"static/pelanggaran/{filename}"
+                            text_lines = [f"{hari}, {tanggal} {waktu}", f"ID: {vehicle_id} | Akurasi: {conf:.2f}%"]
 
-                                # === Kumpulkan Info Pelanggar ===
-                                text_lines = [f"{hari}, {tanggal} {waktu}"]  # header tanggal
-                                excel_rows = []
+                            cv2.putText(frame, text_lines[0], (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                            cv2.putText(frame, text_lines[1], (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                            cv2.imwrite(filepath, frame)
 
-                                for vid, data in vehicle_tracker.items():
-                                    vehicle_class = "mobil" if data["class"] == 2 else "motor"
-                                    avg_conf = sum(confidences) / len(confidences) if confidences else 0.0
-                                    text_lines.append(f"ID: {vid} | Akurasi: {avg_conf:.2f}%")
-                                    excel_rows.append([tanggal, hari, waktu, vid, vehicle_class, f"{avg_conf:.2f}", filename])
+                            log_file = 'static/pelanggaran_log.xlsx'
+                            headers = ['tanggal', 'hari', 'waktu', 'vehicle_id', 'kelas', 'confidence', 'nama_file']
+                            excel_row = [tanggal, hari, waktu, vehicle_id, "mobil" if cls == 2 else "motor", f"{conf:.2f}", filename]
 
-                                # === Tampilkan Info di Gambar ===
-                                overlay = frame.copy()
-                                start_x = 10
-                                start_y = 40
-                                line_height = 30
-                                max_width = 520
-                                box_height = line_height * len(text_lines) + 20
+                            if not os.path.exists(log_file):
+                                wb = Workbook()
+                                ws = wb.active
+                                ws.append(headers)
+                            else:
+                                wb = load_workbook(log_file)
+                                ws = wb.active
 
-                                cv2.rectangle(overlay, (start_x - 5, start_y - 25),
-                                            (start_x + max_width, start_y - 25 + box_height),
-                                            (0, 0, 0), -1)
-                                cv2.addWeighted(overlay, 0.5, frame, 0.5, 0, frame)
+                            ws.append(excel_row)
+                            wb.save(log_file)
 
-                                for i, line in enumerate(text_lines):
-                                    cv2.putText(frame, line, (start_x, start_y + i * line_height),
-                                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-
-                                # === Simpan Gambar ===
-                                os.makedirs("static/pelanggaran", exist_ok=True)
-                                cv2.imwrite(filepath, frame)
-
-                                # === Simpan ke Excel ===
-                                log_file = 'static/pelanggaran_log.xlsx'
-                                headers = ['tanggal', 'hari', 'waktu', 'vehicle_id', 'kelas', 'confidence', 'nama_file']
-
-                                if not os.path.exists(log_file):
-                                    wb = Workbook()
-                                    ws = wb.active
-                                    ws.append(headers)
-                                else:
-                                    wb = load_workbook(log_file)
-                                    ws = wb.active
-
-                                for row in excel_rows:
-                                    ws.append(row)
-
-                                wb.save(log_file)
+                    else:
+                        tracked = vehicle_tracker[vehicle_id]
+                        tracked["time_entered"] = time.time()
+                        tracked["notified"] = False
 
         # Hapus kendaraan yang tidak terdeteksi lagi
         for vid in list(vehicle_tracker.keys()):
