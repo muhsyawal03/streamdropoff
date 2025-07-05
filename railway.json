@@ -1,8 +1,0 @@
-{
-  "build": {
-    "buildCommand": "pip install -r requirements.txt"
-  },
-  "start": {
-    "startCommand": "gunicorn stream:app --worker-class eventlet -w 1"
-  }
-}
