@@ -166,7 +166,7 @@ def handle_countdown(vehicle_id):
         socketio.emit('telegram_status', {'vehicle_id': vehicle_id, 'status': 1})
 
 def generate_frames():
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture('http://192.168.101.149:8080/?action=stream')
     if not cap.isOpened():
         while True:
             frame = np.zeros((480, 640, 3), dtype=np.uint8)
